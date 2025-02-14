@@ -1,0 +1,34 @@
+public static boolean verifyXMLSignature(String signedXmlString) throws Exception {
+        // Tạo Document từ chuỗi XML đã ký
+        System.out.println("aaaaaaaaaaaaa"+signedXmlString);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true); // Quan trọng để xử lý namespace
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document doc = db.parse(new ByteArrayInputStream(signedXmlString.getBytes(StandardCharsets.UTF_8)));
+
+        // Thiết lập thuộc tính Id là ID hợp lệ
+        doc.getDocumentElement().setIdAttribute("Id", true);
+
+        // Tìm phần tử Signature
+        NodeList nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
+        if (nl.getLength() == 0) {
+            throw new Exception("Không tìm thấy phần tử Signature.");
+        }
+
+        // Tạo XMLSignatureFactory
+        XMLSignatureFactory factory = XMLSignatureFactory.getInstance("DOM");
+
+        // Tạo DOMValidateContext với KeySelector
+        DOMValidateContext valContext = new DOMValidateContext(new X509CertificateKeySelector(), nl.item(0));
+
+        // Thiết lập thuộc tính Id là ID hợp lệ trong valContext
+        valContext.setIdAttributeNS(doc.getDocumentElement(), null, "Id");
+
+        // Tạo đối tượng XMLSignature từ phần tử Signature
+        XMLSignature signature = factory.unmarshalXMLSignature(valContext);
+
+        // Xác minh chữ ký
+        boolean coreValidity = signature.validate(valContext);
+
+        return coreValidity;
+    }
